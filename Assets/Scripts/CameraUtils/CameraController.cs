@@ -34,8 +34,8 @@ namespace Unity.BossRoom.CameraUtils
             if (cinemachineOrbitalFollow != null)
             {
                 // default rotation / zoom
-                cinemachineOrbitalFollow.HorizontalAxis.Value = 40f;
-                cinemachineOrbitalFollow.VerticalAxis.Value = 0.5f;
+                cinemachineOrbitalFollow.HorizontalAxis.Value = Application.isMobilePlatform ? 0f : 40f;
+                cinemachineOrbitalFollow.VerticalAxis.Value = Application.isMobilePlatform ? 0.2f : 0.5f;
             }
         }
     }
