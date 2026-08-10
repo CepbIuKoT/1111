@@ -1,0 +1,97 @@
+name: Import official Boss Room RPG starter
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/import-boss-room.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out Northern Lands repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Download official Unity Boss Room v3.0.0
+        shell: bash
+        run: |
+          git clone --depth 1 --branch v3.0.0 \
+            https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop.git \
+            "${RUNNER_TEMP}/bossroom"
+          git -C "${RUNNER_TEMP}/bossroom" lfs pull
+
+      - name: Replace capsule sandbox with the starter project
+        shell: bash
+        run: |
+          rsync -a --delete \
+            --exclude=".git/" \
+            --exclude=".github/" \
+            "${RUNNER_TEMP}/bossroom/" ./
+
+          mkdir -p Assets/Editor
+          cat > Assets/Editor/CloudBuildHooks.cs <<'CS'
+          using UnityEditor;
+          using UnityEditor.Build;
+          using UnityEngine;
+
+          namespace NorthernLands.Editor
+          {
+              /// <summary>
+              /// Keeps the official Boss Room scenes and gameplay intact while
+              /// applying Android identity settings for Unity Build Automation.
+              /// </summary>
+              public static class CloudBuildHooks
+              {
+                  public static void PreExport()
+                  {
+                      PlayerSettings.SetApplicationIdentifier(
+                          NamedBuildTarget.Android,
+                          "com.northernlands.game");
+                      PlayerSettings.bundleVersion = "0.3.0";
+                      PlayerSettings.Android.bundleVersionCode = 3;
+                      PlayerSettings.defaultInterfaceOrientation =
+                          UIOrientation.LandscapeLeft;
+
+                      AssetDatabase.SaveAssets();
+                      AssetDatabase.Refresh();
+                      Debug.Log(
+                          "Northern Lands: Boss Room Android build settings applied.");
+                  }
+              }
+          }
+          CS
+
+          cat > NORTHERN_LANDS_STARTER.md <<'MD'
+          # Northern Lands starter foundation
+
+          This repository now uses Unity Technologies' Boss Room v3.0.0 as the
+          free, complete RPG starter foundation.
+
+          The original capsule-only smoke-test remains available in Git history.
+          The current project includes real characters, animation, classes,
+          abilities, enemies, dungeon scenes, UI, and a boss encounter.
+
+          Source: https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop
+          License: Unity Companion License (see LICENSE.md).
+          Android build hook:
+          `NorthernLands.Editor.CloudBuildHooks.PreExport`
+          MD
+
+      - name: Commit imported starter
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Replace capsule sandbox with official Boss Room RPG starter"
+          git push
