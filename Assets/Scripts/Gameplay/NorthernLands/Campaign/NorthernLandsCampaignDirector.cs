@@ -26,6 +26,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
         [SerializeField] NorthernWorldId m_World = NorthernWorldId.NorthernLands;
         [SerializeField] NorthernLandsCombatant m_PlayerCombatant;
         [SerializeField] NorthernLandsJarlNpc m_Jarl;
+        [SerializeField] NorthernLandsDivineVoiceNpc m_DivineVoice;
         [SerializeField] NorthernLandsWorldPortal m_Portal;
         [SerializeField] NorthernLandsWorldPortal m_ReturnPortal;
 
@@ -42,6 +43,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
 
         public event Action UiChanged;
         public bool IsInitialized { get; private set; }
+        public bool TowerChoiceVisible { get; private set; }
         public int NorthernSilver => m_State?.Run.northernSilver ?? 0;
         public string StatusText => m_Status;
         public string LocationText => m_World switch
@@ -69,6 +71,11 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
 
                 if (m_World == NorthernWorldId.TowerOfGods)
                 {
+                    if (!m_State.Run.towerTrialStarted)
+                    {
+                        return "ЗАДАНИЕ: поговорить с Гласом богов";
+                    }
+
                     return m_State.Run.towerCompleted
                         ? "ЗАДАНИЕ: испытание завершено — войдите во Врата жизни"
                         : $"ЗАДАНИЕ: стражи башни {m_State.Run.towerTrialKills}/{k_RequiredTowerKills}";
@@ -100,6 +107,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
                     return "ГОВОРИТЬ";
                 }
 
+
+                if (m_DivineVoice && m_DivineVoice.IsInRange(m_Player) && !m_State.Run.towerTrialStarted)
+                {
+                    return "СЛУШАТЬ ГЛАС";
+                }
+
                 if (m_Portal && m_Portal.IsInRange(m_Player))
                 {
                     return m_Portal.Unlocked ? "ВОЙТИ" : "ВРАТА ЗАКРЫТЫ";
@@ -115,13 +128,75 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
             }
         }
 
+        public Transform NavigationTarget
+        {
+            get
+            {
+                if (!IsInitialized || !m_Player)
+                {
+                    return null;
+                }
+
+                if (m_World == NorthernWorldId.DeadWorld)
+                {
+                    return m_State.Run.towerUnlocked ? m_Portal?.transform : ClosestLivingEnemy();
+                }
+
+                if (m_World == NorthernWorldId.TowerOfGods)
+                {
+                    if (!m_State.Run.towerTrialStarted)
+                    {
+                        return m_DivineVoice?.transform;
+                    }
+
+                    return m_State.Run.towerCompleted ? m_Portal?.transform : ClosestLivingEnemy();
+                }
+
+                var quest = m_Quests.Get(QuestProgressService.FirstHuntQuestId);
+                if (quest == null || (quest.completed && !quest.rewardClaimed))
+                {
+                    return m_Jarl?.transform;
+                }
+
+                return quest.completed ? m_Portal?.transform : ClosestLivingEnemy();
+            }
+        }
+
+        public string NavigationTargetText
+        {
+            get
+            {
+                if (m_World == NorthernWorldId.DeadWorld)
+                {
+                    return m_State.Run.towerUnlocked ? "ВХОД В БАШНЮ БОГОВ" : "БЛИЖАЙШАЯ ДУША";
+                }
+
+                if (m_World == NorthernWorldId.TowerOfGods)
+                {
+                    if (!m_State.Run.towerTrialStarted)
+                    {
+                        return "ГЛАС БОГОВ";
+                    }
+                    return m_State.Run.towerCompleted ? "ВРАТА ЖИЗНИ" : "БЛИЖАЙШИЙ СТРАЖ";
+                }
+
+                var quest = m_Quests.Get(QuestProgressService.FirstHuntQuestId);
+                if (quest == null || (quest.completed && !quest.rewardClaimed))
+                {
+                    return "ЯРЛ ИНГВАР";
+                }
+                return quest.completed ? "ВРАТА В МИР МЁРТВЫХ" : "БЛИЖАЙШИЙ ВРАГ";
+            }
+        }
+
         public void Configure(
             NorthernWorldId world,
             Transform player,
             NorthernLandsCombatant playerCombatant,
             NorthernLandsJarlNpc jarl,
             NorthernLandsWorldPortal portal,
-            NorthernLandsWorldPortal returnPortal = null)
+            NorthernLandsWorldPortal returnPortal = null,
+            NorthernLandsDivineVoiceNpc divineVoice = null)
         {
             m_World = world;
             m_Player = player;
@@ -129,6 +204,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
             m_Jarl = jarl;
             m_Portal = portal;
             m_ReturnPortal = returnPortal;
+            m_DivineVoice = divineVoice;
         }
 
         public void Initialize(
@@ -155,7 +231,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
             m_Status = m_World switch
             {
                 NorthernWorldId.DeadWorld => "Соберите силу павших душ и отыщите путь к Башне богов.",
-                NorthernWorldId.TowerOfGods => "Победите стражей зала и пробудите Врата жизни.",
+                NorthernWorldId.TowerOfGods => "Найдите Глас богов и выберите путь испытания.",
                 _ => "Доберитесь до ярла Ингвара в главном зале Риверхольма."
             };
 
@@ -191,6 +267,11 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
 
         void OnDestroy()
         {
+            if (TowerChoiceVisible)
+            {
+                Time.timeScale = 1f;
+            }
+
             if (m_PlayerCombatant)
             {
                 m_PlayerCombatant.Defeated -= OnPlayerDefeated;
@@ -234,6 +315,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
                 return;
             }
 
+            if (m_DivineVoice && m_DivineVoice.IsInRange(m_Player) && !m_State.Run.towerTrialStarted)
+            {
+                InteractWithDivineVoice();
+                return;
+            }
+
             if (m_Portal && m_Portal.IsInRange(m_Player))
             {
                 InteractWithPortal();
@@ -265,7 +352,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
             if (quest == null)
             {
                 m_Quests.Start(QuestProgressService.FirstHuntQuestId, k_RequiredImpKills);
-                m_Status = "Ярл Ингвар: морозные бесы перекрыли дороги. Уничтожьте пятерых и возвращайтесь.";
+                m_Status = "Ярл Ингвар: морозные бесы перекрыли дороги. Уничтожьте четверых и возвращайтесь.";
             }
             else if (!quest.completed)
             {
@@ -320,6 +407,47 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
             SceneManager.LoadScene(sceneName);
         }
 
+        void InteractWithDivineVoice()
+        {
+            m_Status = "Глас богов: что становится больше, чем больше у него отнимают? Выберите ответ или бой.";
+            TowerChoiceVisible = true;
+            Time.timeScale = 0f;
+            NotifyUi();
+        }
+
+        public void ChooseTowerCombat()
+        {
+            if (!IsInitialized || m_World != NorthernWorldId.TowerOfGods || m_State.Run.towerCompleted)
+            {
+                return;
+            }
+
+            m_State.Run.towerTrialStarted = true;
+            TowerChoiceVisible = false;
+            Time.timeScale = 1f;
+            m_Status = "Глас богов: докажите право на жизнь. Победите восьмерых стражей.";
+            SaveCurrentState();
+            NotifyUi();
+        }
+
+        public void ChooseTowerRiddle()
+        {
+            if (!IsInitialized || m_World != NorthernWorldId.TowerOfGods || m_State.Run.towerCompleted)
+            {
+                return;
+            }
+
+            m_State.Run.towerTrialStarted = true;
+            m_State.Run.towerCompleted = true;
+            TowerChoiceVisible = false;
+            Time.timeScale = 1f;
+            m_Status = "Верно: яма. Испытание пройдено, Врата жизни открыты.";
+            DismissTowerGuardians();
+            RefreshPortal();
+            SaveCurrentState();
+            NotifyUi();
+        }
+
         void OnEnemyDefeated(NorthernLandsCombatant enemy)
         {
             if (m_World == NorthernWorldId.DeadWorld)
@@ -338,6 +466,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
 
             if (m_World == NorthernWorldId.TowerOfGods)
             {
+                m_State.Run.towerTrialStarted = true;
                 if (m_State.Run.towerCompleted)
                 {
                     return;
@@ -372,6 +501,17 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
                 : $"Морозный бес повержен: {quest.currentAmount}/{quest.requiredAmount}.";
             SaveCurrentState();
             NotifyUi();
+        }
+
+        void DismissTowerGuardians()
+        {
+            foreach (var enemy in m_Enemies)
+            {
+                if (enemy)
+                {
+                    enemy.gameObject.SetActive(false);
+                }
+            }
         }
 
         void OnPlayerDefeated(NorthernLandsCombatant player)
@@ -487,6 +627,29 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Campaign
 
             var quest = m_Quests.Get(QuestProgressService.FirstHuntQuestId);
             m_Portal.SetUnlocked(quest?.rewardClaimed ?? false);
+        }
+
+        Transform ClosestLivingEnemy()
+        {
+            Transform closest = null;
+            var closestDistance = float.MaxValue;
+            foreach (var enemy in m_Enemies)
+            {
+                if (!enemy || !enemy.IsAlive)
+                {
+                    continue;
+                }
+
+                var distance = (enemy.transform.position - m_Player.position).sqrMagnitude;
+                if (distance >= closestDistance)
+                {
+                    continue;
+                }
+
+                closestDistance = distance;
+                closest = enemy.transform;
+            }
+            return closest;
         }
 
         void NotifyUi()

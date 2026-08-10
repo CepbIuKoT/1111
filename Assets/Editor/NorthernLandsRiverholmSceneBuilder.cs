@@ -103,10 +103,11 @@ namespace NorthernLands.Editor
                 NorthernWorldId.NorthernLands,
                 false,
                 "Gate of Life");
+            var divineVoice = CreateDivineVoice(terrain, new Vector3(0f, 0f, -58f));
             var player = BuildPlayer(terrain, new Vector3(0f, 0f, -82f));
             BuildEnemies(terrain, TowerEnemyPositions(), "Tower Guardians — Local AI", "Tower Guardian");
             BuildCamera(player.transform);
-            BuildRuntimeSystems(NorthernWorldId.TowerOfGods, player, null, lifeGate);
+            BuildRuntimeSystems(NorthernWorldId.TowerOfGods, player, null, lifeGate, null, divineVoice);
             EditorSceneManager.SaveScene(scene, TowerScenePath);
         }
 
@@ -568,7 +569,8 @@ namespace NorthernLands.Editor
             GameObject player,
             NorthernLandsJarlNpc jarl,
             NorthernLandsWorldPortal portal,
-            NorthernLandsWorldPortal returnPortal = null)
+            NorthernLandsWorldPortal returnPortal = null,
+            NorthernLandsDivineVoiceNpc divineVoice = null)
         {
             var runtime = new GameObject("Northern Lands Runtime", typeof(NorthernLandsCampaignDirector), typeof(NorthernLandsMobileHud));
             runtime.GetComponent<NorthernLandsCampaignDirector>().Configure(
@@ -577,7 +579,8 @@ namespace NorthernLands.Editor
                 player.GetComponent<NorthernLandsCombatant>(),
                 jarl,
                 portal,
-                returnPortal);
+                returnPortal,
+                divineVoice);
             var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             eventSystem.GetComponent<EventSystem>().sendNavigationEvents = true;
         }
@@ -615,6 +618,41 @@ namespace NorthernLands.Editor
             animator.avatar = AssetDatabase.LoadAllAssetsAtPath(k_AvatarPath).OfType<Avatar>().FirstOrDefault();
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(k_ControllerPath);
             return jarl.GetComponent<NorthernLandsJarlNpc>();
+        }
+
+        static NorthernLandsDivineVoiceNpc CreateDivineVoice(Terrain terrain, Vector3 position)
+        {
+            position.y = terrain.SampleHeight(position) + terrain.transform.position.y;
+            var voice = new GameObject("Voice of the Gods — Trial Guide", typeof(NorthernLandsDivineVoiceNpc));
+            voice.transform.position = position;
+            voice.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(k_JarlPrefab);
+            if (!source)
+            {
+                throw new InvalidOperationException($"Northern Lands divine voice prefab was not found: {k_JarlPrefab}");
+            }
+
+            var visual = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            PrefabUtility.UnpackPrefabInstance(visual, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            visual.name = "Divine Voice Visual";
+            visual.transform.SetParent(voice.transform, false);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            foreach (var behaviour in visual.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                Object.DestroyImmediate(behaviour);
+            }
+
+            foreach (var oldAnimator in visual.GetComponentsInChildren<Animator>(true))
+            {
+                Object.DestroyImmediate(oldAnimator);
+            }
+
+            var animator = visual.AddComponent<Animator>();
+            animator.avatar = AssetDatabase.LoadAllAssetsAtPath(k_AvatarPath).OfType<Avatar>().FirstOrDefault();
+            animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(k_ControllerPath);
+            return voice.GetComponent<NorthernLandsDivineVoiceNpc>();
         }
 
         static void CreateHouse(Transform parent, Terrain terrain, Palette palette, Vector3 position, float width, float yaw)

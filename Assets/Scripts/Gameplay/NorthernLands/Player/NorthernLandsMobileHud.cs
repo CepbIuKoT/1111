@@ -25,7 +25,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
         TMP_Text m_StatusLabel;
         TMP_Text m_InteractionLabel;
         TMP_Text m_LocationLabel;
+        TMP_Text m_NavigationLabel;
+        RectTransform m_NavigationArrow;
         GameObject m_InteractionButton;
+        GameObject m_TowerChoicePanel;
+        Camera m_WorldCamera;
+        float m_NextNavigationRefresh;
 
         void Start()
         {
@@ -93,6 +98,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
                 {
                     m_InteractionLabel.text = interaction;
                 }
+
+                if (Time.unscaledTime >= m_NextNavigationRefresh)
+                {
+                    m_NextNavigationRefresh = Time.unscaledTime + 0.1f;
+                    RefreshNavigation();
+                }
             }
         }
 
@@ -146,9 +157,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             m_ObjectiveLabel.color = new Color(0.96f, 0.82f, 0.42f);
 
             m_StatusLabel = CreateCenteredLabel(canvasObject.transform, "Status", new Vector2(0f, -105f), new Vector2(980f, 105f), 23f);
+            CreateNavigationIndicator(canvasObject.transform);
             m_InteractionButton = CreateCenteredInteractionButton(canvasObject.transform);
             m_InteractionLabel = m_InteractionButton.GetComponentInChildren<TextMeshProUGUI>();
             m_InteractionButton.SetActive(false);
+            m_TowerChoicePanel = CreateTowerChoicePanel(canvasObject.transform);
+            m_TowerChoicePanel.SetActive(false);
         }
 
         void CreateActionButton(Transform parent, string caption, Vector2 position, float size, Color color, UnityEngine.Events.UnityAction action)
@@ -247,6 +261,113 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             return item;
         }
 
+        void CreateNavigationIndicator(Transform parent)
+        {
+            var root = new GameObject("Objective Navigation", typeof(RectTransform));
+            root.transform.SetParent(parent, false);
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = rootRect.anchorMax = new Vector2(0.5f, 1f);
+            rootRect.pivot = new Vector2(0.5f, 1f);
+            rootRect.anchoredPosition = new Vector2(0f, -205f);
+            rootRect.sizeDelta = new Vector2(680f, 80f);
+
+            var arrow = new GameObject("Direction Arrow", typeof(RectTransform), typeof(TextMeshProUGUI));
+            arrow.transform.SetParent(root.transform, false);
+            m_NavigationArrow = arrow.GetComponent<RectTransform>();
+            m_NavigationArrow.anchorMin = m_NavigationArrow.anchorMax = new Vector2(0f, 0.5f);
+            m_NavigationArrow.pivot = new Vector2(0.5f, 0.5f);
+            m_NavigationArrow.anchoredPosition = new Vector2(38f, 0f);
+            m_NavigationArrow.sizeDelta = new Vector2(70f, 70f);
+            var arrowText = arrow.GetComponent<TextMeshProUGUI>();
+            arrowText.font = m_Font;
+            arrowText.text = "▲";
+            arrowText.fontSize = 48f;
+            arrowText.color = new Color(1f, 0.77f, 0.2f);
+            arrowText.alignment = TextAlignmentOptions.Center;
+            arrowText.raycastTarget = false;
+
+            var label = new GameObject("Destination", typeof(RectTransform), typeof(TextMeshProUGUI));
+            label.transform.SetParent(root.transform, false);
+            var labelRect = label.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(82f, 0f);
+            labelRect.offsetMax = Vector2.zero;
+            m_NavigationLabel = label.GetComponent<TextMeshProUGUI>();
+            m_NavigationLabel.font = m_Font;
+            m_NavigationLabel.fontSize = 22f;
+            m_NavigationLabel.color = new Color(1f, 0.86f, 0.42f);
+            m_NavigationLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            m_NavigationLabel.raycastTarget = false;
+        }
+
+        GameObject CreateTowerChoicePanel(Transform parent)
+        {
+            var panel = new GameObject("Tower Trial Choice", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(parent, false);
+            var rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(860f, 360f);
+            panel.GetComponent<Image>().color = new Color(0.025f, 0.035f, 0.07f, 0.97f);
+
+            var title = CreateCenteredLabel(panel.transform, "Riddle", new Vector2(0f, -35f), new Vector2(780f, 130f), 29f);
+            title.text = "Что становится больше, чем больше у него отнимают?";
+            title.color = new Color(0.96f, 0.82f, 0.42f);
+            CreateChoiceButton(panel.transform, "ОТВЕТ: ЯМА", new Vector2(-210f, -225f), () => m_Director?.ChooseTowerRiddle());
+            CreateChoiceButton(panel.transform, "ВЫБРАТЬ БОЙ", new Vector2(210f, -225f), () => m_Director?.ChooseTowerCombat());
+            return panel;
+        }
+
+        void CreateChoiceButton(Transform parent, string caption, Vector2 position, UnityEngine.Events.UnityAction action)
+        {
+            var item = new GameObject(caption, typeof(RectTransform), typeof(Image), typeof(Button));
+            item.transform.SetParent(parent, false);
+            var rect = item.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(350f, 86f);
+            var image = item.GetComponent<Image>();
+            image.color = new Color(0.15f, 0.23f, 0.36f, 1f);
+            var button = item.GetComponent<Button>();
+            button.targetGraphic = image;
+            if (action != null)
+            {
+                button.onClick.AddListener(action);
+            }
+            AddLabel(item.transform, caption, 24f);
+        }
+
+        void RefreshNavigation()
+        {
+            if (!m_NavigationLabel || !m_NavigationArrow || !m_Player)
+            {
+                return;
+            }
+
+            var target = m_Director.NavigationTarget;
+            m_NavigationArrow.gameObject.SetActive(target != null);
+            m_NavigationLabel.gameObject.SetActive(target != null);
+            if (!target)
+            {
+                return;
+            }
+
+            m_WorldCamera = m_WorldCamera ? m_WorldCamera : Camera.main;
+            var offset = Vector3.ProjectOnPlane(target.position - m_Player.transform.position, Vector3.up);
+            var distance = offset.magnitude;
+            m_NavigationLabel.text = $"{m_Director.NavigationTargetText}  •  {Mathf.CeilToInt(distance)} м";
+            if (!m_WorldCamera || offset.sqrMagnitude < 0.01f)
+            {
+                return;
+            }
+
+            var cameraForward = Vector3.ProjectOnPlane(m_WorldCamera.transform.forward, Vector3.up);
+            var angle = Vector3.SignedAngle(cameraForward, offset, Vector3.up);
+            m_NavigationArrow.localRotation = Quaternion.Euler(0f, 0f, -angle);
+        }
+
         void RefreshCampaignUi()
         {
             if (!m_Director || !m_ObjectiveLabel || !m_StatusLabel)
@@ -257,6 +378,10 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             m_ObjectiveLabel.text = m_Director.ObjectiveText;
             m_StatusLabel.text = m_Director.StatusText;
             m_LocationLabel.text = m_Director.LocationText;
+            if (m_TowerChoicePanel)
+            {
+                m_TowerChoicePanel.SetActive(m_Director.TowerChoiceVisible);
+            }
         }
     }
 

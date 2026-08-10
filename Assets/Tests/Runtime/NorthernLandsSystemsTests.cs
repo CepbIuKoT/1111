@@ -97,5 +97,32 @@ namespace Unity.BossRoom.Tests.Runtime
             Assert.That(state.Run.gold, Is.Zero);
             Assert.That(state.EternalRace.raceId, Is.EqualTo("northborn"));
         }
+
+        [Test]
+        public void OlderRunSaveIsUpgradedWithoutLosingProgress()
+        {
+            var state = new NorthernLandsProgressState();
+            var oldRun = new NorthernLandsSaveData { schemaVersion = 2, gold = 321, towerTrialKills = 3 };
+
+            state.Restore(oldRun, new EternalRaceSaveData { raceId = "northborn" });
+
+            Assert.That(state.Run.schemaVersion, Is.EqualTo(3));
+            Assert.That(state.Run.gold, Is.EqualTo(321));
+            Assert.That(state.Run.towerTrialKills, Is.EqualTo(3));
+            Assert.That(state.Run.towerTrialStarted, Is.True);
+            Assert.That(state.EternalRace.raceId, Is.EqualTo("northborn"));
+        }
+
+        [Test]
+        public void CompletingTowerTrialMarksTrialAsStarted()
+        {
+            var state = new NorthernLandsProgressState();
+
+            state.CompleteTowerTrial();
+
+            Assert.That(state.Run.towerTrialStarted, Is.True);
+            Assert.That(state.Run.towerCompleted, Is.True);
+            Assert.That(state.Run.towerTrialKills, Is.EqualTo(8));
+        }
     }
 }

@@ -20,8 +20,8 @@ namespace NorthernLands.Editor
             ValidateStartupScenes();
 
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.northernlands.game");
-            PlayerSettings.bundleVersion = "0.6.0";
-            PlayerSettings.Android.bundleVersionCode = 6;
+            PlayerSettings.bundleVersion = "0.7.0";
+            PlayerSettings.Android.bundleVersionCode = 7;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
 
             AssetDatabase.SaveAssets();
