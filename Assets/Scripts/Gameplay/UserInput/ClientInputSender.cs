@@ -145,6 +145,58 @@ namespace Unity.BossRoom.Gameplay.UserInput
             m_MainCamera = Camera.main;
         }
 
+        /// <summary>
+        /// Moves the locally owned character from a continuous, camera-relative mobile joystick input.
+        /// The request uses the same authoritative server path as click-to-move.
+        /// </summary>
+        public void RequestMobileMove(Vector2 input)
+        {
+            if (!IsSpawned || !IsOwner || input.sqrMagnitude < 0.01f ||
+                (Time.time - m_LastSentMove) <= k_MoveSendRateSeconds)
+            {
+                return;
+            }
+
+            m_MainCamera = m_MainCamera ? m_MainCamera : Camera.main;
+            if (!m_MainCamera)
+            {
+                return;
+            }
+
+            var cameraForward = Vector3.ProjectOnPlane(m_MainCamera.transform.forward, Vector3.up).normalized;
+            var cameraRight = Vector3.ProjectOnPlane(m_MainCamera.transform.right, Vector3.up).normalized;
+            if (cameraForward.sqrMagnitude < 0.01f)
+            {
+                cameraForward = Vector3.forward;
+            }
+
+            var moveDirection = Vector3.ClampMagnitude(cameraRight * input.x + cameraForward * input.y, 1f);
+            var desiredPosition = m_PhysicsWrapper.Transform.position + moveDirection * 2.5f;
+            if (!NavMesh.SamplePosition(desiredPosition, out var hit, 2.5f, NavMesh.AllAreas))
+            {
+                return;
+            }
+
+            m_LastSentMove = Time.time;
+            m_ServerCharacter.ServerSendCharacterInputRpc(hit.position);
+            ClientMoveEvent?.Invoke(hit.position);
+        }
+
+        /// <summary>
+        /// Stops a path started by the mobile joystick when the finger is released.
+        /// </summary>
+        public void StopMobileMove()
+        {
+            if (!IsSpawned || !IsOwner ||
+                !NavMesh.SamplePosition(m_PhysicsWrapper.Transform.position, out var hit, 1f, NavMesh.AllAreas))
+            {
+                return;
+            }
+
+            m_ServerCharacter.ServerSendCharacterInputRpc(hit.position);
+            ClientMoveEvent?.Invoke(hit.position);
+        }
+
         public override void OnNetworkSpawn()
         {
             if (!IsClient || !IsOwner)
