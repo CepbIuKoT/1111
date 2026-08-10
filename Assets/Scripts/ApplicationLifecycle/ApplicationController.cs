@@ -4,6 +4,10 @@ using Unity.BossRoom.ApplicationLifecycle.Messages;
 using Unity.BossRoom.ConnectionManagement;
 using Unity.BossRoom.Gameplay.GameState;
 using Unity.BossRoom.Gameplay.Messages;
+using Unity.BossRoom.Gameplay.NorthernLands;
+using Unity.BossRoom.Gameplay.NorthernLands.Content;
+using Unity.BossRoom.Gameplay.NorthernLands.GameState;
+using Unity.BossRoom.Gameplay.NorthernLands.Persistence;
 using Unity.BossRoom.Infrastructure;
 using Unity.BossRoom.UnityServices;
 using Unity.BossRoom.UnityServices.Auth;
@@ -49,6 +53,11 @@ namespace Unity.BossRoom.ApplicationLifecycle
             builder.Register<ProfileManager>(Lifetime.Singleton);
 
             builder.Register<PersistentGameState>(Lifetime.Singleton);
+
+            builder.Register<NorthernLandsContentCatalog>(Lifetime.Singleton);
+            builder.Register<NorthernLandsProgressState>(Lifetime.Singleton);
+            builder.Register<NorthernLandsSaveService>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<NorthernLandsRuntime>(Lifetime.Singleton);
 
             // These message channels are essential and persist for the lifetime of the Session and relay services
             // Registering as instance to prevent code stripping on iOS
