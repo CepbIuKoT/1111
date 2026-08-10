@@ -1,5 +1,7 @@
 using System;
 using Unity.BossRoom.Gameplay.NorthernLands.Content;
+using Unity.BossRoom.Gameplay.NorthernLands.Items;
+using Unity.BossRoom.Gameplay.NorthernLands.Progression;
 
 namespace Unity.BossRoom.Gameplay.NorthernLands.GameState
 {
@@ -18,14 +20,21 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.GameState
         public NorthernWorldId currentWorld = NorthernWorldId.NorthernLands;
         public int level = 1;
         public int experience;
+        public int pendingTalentChoices;
         public int gold;
         public int deadWorldDeaths;
         public int soulKills;
         public int soulAsh;
         public bool towerUnlocked;
         public bool towerCompleted;
+        public NorthernLandsHeroStats heroStats = new();
         public string[] learnedTalentIds = Array.Empty<string>();
         public string[] inventoryItemIds = Array.Empty<string>();
+        public EquipmentItemData[] inventory = Array.Empty<EquipmentItemData>();
+        public string equippedWeaponId;
+        public string equippedArmorId;
+        public string equippedRingId;
+        public QuestProgressData[] quests = Array.Empty<QuestProgressData>();
         public CityReputationData[] cityReputations = Array.Empty<CityReputationData>();
     }
 
@@ -65,7 +74,10 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.GameState
 
             Run.learnedTalentIds ??= Array.Empty<string>();
             Run.inventoryItemIds ??= Array.Empty<string>();
+            Run.inventory ??= Array.Empty<EquipmentItemData>();
+            Run.quests ??= Array.Empty<QuestProgressData>();
             Run.cityReputations ??= Array.Empty<CityReputationData>();
+            Run.heroStats ??= new NorthernLandsHeroStats();
         }
 
         public void RecordSoulKill(bool droppedAsh)

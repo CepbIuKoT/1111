@@ -40,6 +40,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Persistence
             WriteAtomically(RacePath, JsonUtility.ToJson(m_Progress.EternalRace, true));
         }
 
+        public void SaveAll()
+        {
+            SaveRun();
+            SavePermanentRace();
+        }
+
         public void ResetRunKeepingRace()
         {
             m_Progress.Restore(null, m_Progress.EternalRace);

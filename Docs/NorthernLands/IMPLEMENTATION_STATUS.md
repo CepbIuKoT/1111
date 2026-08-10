@@ -18,8 +18,14 @@ This branch turns the Boss Room sample into the foundation for the single-player
 - Run progression and permanent-race state kept as separate save domains.
 - Dead World, soul ash, Tower of Gods unlock and return-to-life rules.
 - Atomic local JSON persistence with backup behavior.
+- Hero levels, experience thresholds, two talent choices per level and stat growth.
+- Equipment data for weapons, armor and rings across five rarities.
+- Living-item soul experience, soul levels, kill tracking and item consumption.
+- Riverholm first-hunt quest progression and one-time reward handling.
+- Per-world city reputation, crime status and both intermediary redemption paths.
+- Gated world travel with autosave before every transition.
 - Dependency injection through the existing Boss Room `ApplicationController`.
-- Runtime tests for content counts and the core death loop.
+- Runtime tests for content counts, the death loop, progression, quests, living items and reputation.
 
 ## Planned campaign scenes
 

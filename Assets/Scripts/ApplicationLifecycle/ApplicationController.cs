@@ -7,7 +7,12 @@ using Unity.BossRoom.Gameplay.Messages;
 using Unity.BossRoom.Gameplay.NorthernLands;
 using Unity.BossRoom.Gameplay.NorthernLands.Content;
 using Unity.BossRoom.Gameplay.NorthernLands.GameState;
+using Unity.BossRoom.Gameplay.NorthernLands.Items;
 using Unity.BossRoom.Gameplay.NorthernLands.Persistence;
+using Unity.BossRoom.Gameplay.NorthernLands.Progression;
+using Unity.BossRoom.Gameplay.NorthernLands.Quests;
+using Unity.BossRoom.Gameplay.NorthernLands.Reputation;
+using Unity.BossRoom.Gameplay.NorthernLands.World;
 using Unity.BossRoom.Infrastructure;
 using Unity.BossRoom.UnityServices;
 using Unity.BossRoom.UnityServices.Auth;
@@ -57,6 +62,11 @@ namespace Unity.BossRoom.ApplicationLifecycle
             builder.Register<NorthernLandsContentCatalog>(Lifetime.Singleton);
             builder.Register<NorthernLandsProgressState>(Lifetime.Singleton);
             builder.Register<NorthernLandsSaveService>(Lifetime.Singleton);
+            builder.Register<HeroProgressionService>(Lifetime.Singleton);
+            builder.Register<LivingItemService>(Lifetime.Singleton);
+            builder.Register<QuestProgressService>(Lifetime.Singleton);
+            builder.Register<CityReputationService>(Lifetime.Singleton);
+            builder.Register<NorthernLandsWorldTravelService>(Lifetime.Singleton);
             builder.RegisterEntryPoint<NorthernLandsRuntime>(Lifetime.Singleton);
 
             // These message channels are essential and persist for the lifetime of the Session and relay services
