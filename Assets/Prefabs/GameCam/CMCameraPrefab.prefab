@@ -148,17 +148,17 @@ MonoBehaviour:
     RotationDamping: {x: 0, y: 0, z: 0}
     QuaternionDamping: 0
   OrbitStyle: 1
-  Radius: 15
+  Radius: 7
   Orbits:
     Top:
-      Radius: 15
-      Height: 35
-    Center:
-      Radius: 15
-      Height: 20
-    Bottom:
       Radius: 8
-      Height: 5
+      Height: 10
+    Center:
+      Radius: 7
+      Height: 4
+    Bottom:
+      Radius: 5
+      Height: 2
     SplineCurvature: 0.2
   RecenteringTarget: 2
   HorizontalAxis:
