@@ -10,6 +10,7 @@ This branch turns the Boss Room sample into the foundation for the single-player
 - Melee, magic, blocking, dash, equipment, talents and living-item progression.
 - Death moves the hero to the Dead World. Five soul kills and two soul ash unlock the Tower of Gods. Completing its boss or riddle returns the hero to life. A second death inside the Dead World resets run progress but keeps the permanent race.
 - Local, versioned save data suitable for offline single-player play.
+- Every Android launch enters a dedicated main menu before gameplay. The menu contains Continue, New Game, Settings and Exit; New Game opens permanent-race selection when needed.
 
 ## Implemented in this milestone
 
@@ -24,6 +25,7 @@ This branch turns the Boss Room sample into the foundation for the single-player
 - Riverholm first-hunt quest progression and one-time reward handling.
 - Per-world city reputation, crime status and both intermediary redemption paths.
 - Gated world travel with autosave before every transition.
+- Startup menu navigation rules and a cloud-build guard that prevents direct-to-level APKs.
 - Dependency injection through the existing Boss Room `ApplicationController`.
 - Runtime tests for content counts, the death loop, progression, quests, living items and reputation.
 

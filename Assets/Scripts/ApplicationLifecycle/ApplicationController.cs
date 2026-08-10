@@ -8,6 +8,7 @@ using Unity.BossRoom.Gameplay.NorthernLands;
 using Unity.BossRoom.Gameplay.NorthernLands.Content;
 using Unity.BossRoom.Gameplay.NorthernLands.GameState;
 using Unity.BossRoom.Gameplay.NorthernLands.Items;
+using Unity.BossRoom.Gameplay.NorthernLands.Menu;
 using Unity.BossRoom.Gameplay.NorthernLands.Persistence;
 using Unity.BossRoom.Gameplay.NorthernLands.Progression;
 using Unity.BossRoom.Gameplay.NorthernLands.Quests;
@@ -112,7 +113,7 @@ namespace Unity.BossRoom.ApplicationLifecycle
             DontDestroyOnLoad(gameObject);
             DontDestroyOnLoad(m_UpdateRunner.gameObject);
             Application.targetFrameRate = 120;
-            SceneManager.LoadScene("MainMenu");
+            SceneManager.LoadScene(NorthernLandsMenuFlow.SceneName);
         }
 
         protected override void OnDestroy()
