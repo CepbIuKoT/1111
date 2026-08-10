@@ -1,9 +1,0 @@
-{
-  "name": "NorthernLands.Runtime",
-  "rootNamespace": "NorthernLands",
-  "references": [
-    "Unity.InputSystem",
-    "Unity.ugui"
-  ],
-  "autoReferenced": true
-}
