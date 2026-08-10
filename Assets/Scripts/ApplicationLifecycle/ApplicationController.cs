@@ -68,7 +68,9 @@ namespace Unity.BossRoom.ApplicationLifecycle
             builder.Register<QuestProgressService>(Lifetime.Singleton);
             builder.Register<CityReputationService>(Lifetime.Singleton);
             builder.Register<NorthernLandsWorldTravelService>(Lifetime.Singleton);
+            builder.Register<NorthernLandsCampaignLauncher>(Lifetime.Singleton);
             builder.RegisterEntryPoint<NorthernLandsRuntime>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<NorthernLandsMainMenuPresenter>(Lifetime.Singleton);
 
             // These message channels are essential and persist for the lifetime of the Session and relay services
             // Registering as instance to prevent code stripping on iOS

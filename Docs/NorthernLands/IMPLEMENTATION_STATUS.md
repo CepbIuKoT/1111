@@ -26,6 +26,7 @@ This branch turns the Boss Room sample into the foundation for the single-player
 - Per-world city reputation, crime status and both intermediary redemption paths.
 - Gated world travel with autosave before every transition.
 - Startup menu navigation rules and a cloud-build guard that prevents direct-to-level APKs.
+- Runtime-built Russian main menu with responsive Android scaling, Continue/New Game/Settings/Exit, volume controls and permanent-race browsing for all 45 races.
 - Dependency injection through the existing Boss Room `ApplicationController`.
 - Runtime tests for content counts, the death loop, progression, quests, living items and reputation.
 

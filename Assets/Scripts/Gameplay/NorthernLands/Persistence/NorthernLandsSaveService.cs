@@ -18,6 +18,8 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Persistence
         string RunPath => Path.Combine(Application.persistentDataPath, k_RunFileName);
         string RacePath => Path.Combine(Application.persistentDataPath, k_RaceFileName);
 
+        public bool HasRunSave => File.Exists(RunPath);
+
         public NorthernLandsSaveService(NorthernLandsProgressState progress)
         {
             m_Progress = progress;
