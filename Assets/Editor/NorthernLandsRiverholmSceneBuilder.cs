@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Unity.BossRoom.Gameplay.NorthernLands.Combat;
 using Unity.BossRoom.Gameplay.NorthernLands.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -23,6 +24,7 @@ namespace NorthernLands.Editor
         const string k_TerrainTexturePath = k_GeneratedFolder + "/RiverholmGround.asset";
         const string k_TerrainLayerPath = k_GeneratedFolder + "/RiverholmGroundLayer.terrainlayer";
         const string k_CharacterPrefab = "Assets/Prefabs/CharGFX/CharacterGraphics/PlayerGraphics_Tank_Boy.prefab";
+        const string k_EnemyPrefab = "Assets/Prefabs/CharGFX/ImpGraphics.prefab";
         const string k_AvatarPath = "Assets/Models/CharacterSet.fbx";
         const string k_ControllerPath = "Assets/Models/Animation Controllers/CharacterSetController.controller";
 
@@ -42,6 +44,7 @@ namespace NorthernLands.Editor
             BuildRiverholm(terrain, palette);
             BuildForestAndLandmarks(terrain, palette);
             var player = BuildPlayer(terrain);
+            BuildEnemies(terrain);
             BuildCamera(player.transform);
             BuildRuntimeSystems();
 
@@ -209,7 +212,13 @@ namespace NorthernLands.Editor
 
         static GameObject BuildPlayer(Terrain terrain)
         {
-            var player = new GameObject("Eirik — Local Campaign Hero", typeof(CharacterController), typeof(NorthernLandsPlayerInput), typeof(NorthernLandsThirdPersonMotor));
+            var player = new GameObject(
+                "Eirik — Local Campaign Hero",
+                typeof(CharacterController),
+                typeof(NorthernLandsPlayerInput),
+                typeof(NorthernLandsCombatant),
+                typeof(NorthernLandsPlayerCombat),
+                typeof(NorthernLandsThirdPersonMotor));
             var spawn = new Vector3(0f, 0f, -86f);
             spawn.y = terrain.SampleHeight(spawn) + terrain.transform.position.y + 0.1f;
             player.transform.position = spawn;
@@ -219,6 +228,7 @@ namespace NorthernLands.Editor
             controller.radius = 0.42f;
             controller.center = new Vector3(0f, 1f, 0f);
             controller.stepOffset = 0.42f;
+            player.GetComponent<NorthernLandsCombatant>().Configure(120f, true);
 
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(k_CharacterPrefab);
             if (!source)
@@ -248,6 +258,56 @@ namespace NorthernLands.Editor
             animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(k_ControllerPath);
             animator.applyRootMotion = false;
             return player;
+        }
+
+        static void BuildEnemies(Terrain terrain)
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(k_EnemyPrefab);
+            if (!source)
+            {
+                throw new InvalidOperationException($"Northern Lands enemy graphics prefab was not found: {k_EnemyPrefab}");
+            }
+
+            var positions = new[]
+            {
+                new Vector3(-20f, 0f, -112f), new Vector3(28f, 0f, -125f),
+                new Vector3(-86f, 0f, -98f), new Vector3(102f, 0f, -88f),
+                new Vector3(-124f, 0f, -148f), new Vector3(-108f, 0f, -132f),
+                new Vector3(142f, 0f, 102f), new Vector3(173f, 0f, 126f),
+                new Vector3(-174f, 0f, 105f), new Vector3(-145f, 0f, 143f),
+                new Vector3(118f, 0f, 170f), new Vector3(185f, 0f, -35f)
+            };
+
+            var group = new GameObject("Riverholm Hostiles — Local AI");
+            for (var i = 0; i < positions.Length; i++)
+            {
+                var position = positions[i];
+                position.y = terrain.SampleHeight(position) + terrain.transform.position.y + 0.05f;
+                var enemy = new GameObject(
+                    $"Frost Imp {i + 1:00}",
+                    typeof(CharacterController),
+                    typeof(NorthernLandsCombatant),
+                    typeof(NorthernLandsEnemyAI));
+                enemy.transform.SetParent(group.transform);
+                enemy.transform.position = position;
+                var controller = enemy.GetComponent<CharacterController>();
+                controller.height = 1.75f;
+                controller.radius = 0.42f;
+                controller.center = new Vector3(0f, 0.88f, 0f);
+                controller.stepOffset = 0.35f;
+                enemy.GetComponent<NorthernLandsCombatant>().Configure(70f, false);
+
+                var visual = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                PrefabUtility.UnpackPrefabInstance(visual, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                visual.name = "Frost Imp Visual";
+                visual.transform.SetParent(enemy.transform, false);
+                visual.transform.localPosition = Vector3.zero;
+                visual.transform.localRotation = Quaternion.identity;
+                foreach (var behaviour in visual.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    Object.DestroyImmediate(behaviour);
+                }
+            }
         }
 
         static void BuildCamera(Transform player)

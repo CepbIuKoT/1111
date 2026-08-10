@@ -1,4 +1,5 @@
 using TMPro;
+using Unity.BossRoom.Gameplay.NorthernLands.Combat;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -14,7 +15,10 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
         static readonly Color k_Gold = new(0.82f, 0.64f, 0.25f, 0.88f);
 
         NorthernLandsPlayerInput m_Input;
+        NorthernLandsCombatant m_Player;
         TMP_FontAsset m_Font;
+        TMP_Text m_HealthLabel;
+        TMP_Text m_SilverLabel;
 
         void Start()
         {
@@ -27,6 +31,33 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             var sourceFont = Resources.Load<Font>("NorthernLands/Fonts/LiberationSans");
             m_Font = sourceFont ? TMP_FontAsset.CreateFontAsset(sourceFont) : TMP_Settings.defaultFontAsset;
             BuildCanvas();
+        }
+
+        void Update()
+        {
+            if (!m_HealthLabel)
+            {
+                return;
+            }
+
+            if (!m_Player)
+            {
+                var combatants = FindObjectsByType<NorthernLandsCombatant>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                foreach (var combatant in combatants)
+                {
+                    if (combatant.IsPlayer)
+                    {
+                        m_Player = combatant;
+                        break;
+                    }
+                }
+            }
+
+            if (m_Player)
+            {
+                m_HealthLabel.text = $"ЗДОРОВЬЕ  {Mathf.CeilToInt(m_Player.Health)} / {Mathf.CeilToInt(m_Player.MaxHealth)}";
+            }
+            m_SilverLabel.text = $"СЕВЕРНОЕ СЕРЕБРО  {NorthernLandsLootPickup.Silver}";
         }
 
         void BuildCanvas()
@@ -71,6 +102,9 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             locationText.fontSize = 28f;
             locationText.color = new Color(0.92f, 0.94f, 0.98f, 0.92f);
             locationText.alignment = TextAlignmentOptions.Center;
+
+            m_HealthLabel = CreateHudLabel(canvasObject.transform, "Health", new Vector2(45f, -38f), new Vector2(500f, 55f));
+            m_SilverLabel = CreateHudLabel(canvasObject.transform, "Silver", new Vector2(45f, -92f), new Vector2(500f, 48f));
         }
 
         void CreateActionButton(Transform parent, string caption, Vector2 position, float size, Color color, UnityEngine.Events.UnityAction action)
@@ -113,6 +147,23 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             label.color = Color.white;
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
+        }
+
+        TMP_Text CreateHudLabel(Transform parent, string name, Vector2 position, Vector2 size)
+        {
+            var labelObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelObject.transform.SetParent(parent, false);
+            var rect = labelObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var label = labelObject.GetComponent<TextMeshProUGUI>();
+            label.font = m_Font;
+            label.fontSize = name == "Health" ? 27f : 22f;
+            label.color = name == "Health" ? new Color(0.93f, 0.35f, 0.31f) : new Color(0.55f, 0.82f, 1f);
+            label.alignment = TextAlignmentOptions.Left;
+            label.raycastTarget = false;
+            return label;
         }
     }
 

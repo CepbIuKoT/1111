@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.BossRoom.Gameplay.NorthernLands.Combat;
 
 namespace Unity.BossRoom.Gameplay.NorthernLands.Player
 {
@@ -17,6 +18,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
         CharacterController m_Controller;
         NorthernLandsPlayerInput m_Input;
         Animator m_Animator;
+        NorthernLandsPlayerCombat m_Combat;
         Transform m_Camera;
         Vector3 m_Velocity;
         Vector3 m_DodgeDirection;
@@ -27,6 +29,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             m_Controller = GetComponent<CharacterController>();
             m_Input = GetComponent<NorthernLandsPlayerInput>();
             m_Animator = GetComponentInChildren<Animator>();
+            m_Combat = GetComponent<NorthernLandsPlayerCombat>();
             m_Camera = Camera.main ? Camera.main.transform : null;
         }
 
@@ -63,12 +66,12 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             if (m_Animator)
             {
                 m_Animator.SetFloat("Speed", planarVelocity.magnitude / k_RunSpeed, 0.12f, Time.deltaTime);
-                if (m_Input.ConsumeAttack())
+                if (m_Input.ConsumeAttack() && (!m_Combat || m_Combat.TryAttack(false)))
                 {
                     m_Animator.SetTrigger("Attack1");
                 }
 
-                if (m_Input.ConsumeHeavyAttack())
+                if (m_Input.ConsumeHeavyAttack() && (!m_Combat || m_Combat.TryAttack(true)))
                 {
                     m_Animator.SetTrigger("Attack2");
                 }
