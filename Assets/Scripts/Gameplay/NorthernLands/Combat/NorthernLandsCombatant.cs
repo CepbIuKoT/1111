@@ -1,4 +1,5 @@
 using System.Collections;
+using System;
 using UnityEngine;
 
 namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
@@ -19,6 +20,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
         public float MaxHealth => m_MaxHealth;
         public bool IsPlayer => m_IsPlayer;
         public bool IsAlive => Health > 0f;
+        public event Action<NorthernLandsCombatant> Defeated;
 
         void Awake()
         {
@@ -52,6 +54,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
             }
 
             m_Animator?.SetTrigger("Dead");
+            Defeated?.Invoke(this);
             if (m_IsPlayer)
             {
                 StartCoroutine(Respawn());
@@ -62,6 +65,11 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
                 NorthernLandsLootPickup.Create(transform.position + Vector3.up * 0.7f);
                 Destroy(gameObject, 4f);
             }
+        }
+
+        public void RestoreHealth(float health)
+        {
+            Health = Mathf.Clamp(health, 1f, m_MaxHealth);
         }
 
         IEnumerator Respawn()

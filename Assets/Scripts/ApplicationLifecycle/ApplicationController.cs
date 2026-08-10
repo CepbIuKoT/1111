@@ -5,6 +5,7 @@ using Unity.BossRoom.ConnectionManagement;
 using Unity.BossRoom.Gameplay.GameState;
 using Unity.BossRoom.Gameplay.Messages;
 using Unity.BossRoom.Gameplay.NorthernLands;
+using Unity.BossRoom.Gameplay.NorthernLands.Campaign;
 using Unity.BossRoom.Gameplay.NorthernLands.Content;
 using Unity.BossRoom.Gameplay.NorthernLands.GameState;
 using Unity.BossRoom.Gameplay.NorthernLands.Items;
@@ -71,6 +72,7 @@ namespace Unity.BossRoom.ApplicationLifecycle
             builder.Register<NorthernLandsCampaignLauncher>(Lifetime.Singleton);
             builder.RegisterEntryPoint<NorthernLandsRuntime>(Lifetime.Singleton);
             builder.RegisterEntryPoint<NorthernLandsMainMenuPresenter>(Lifetime.Singleton);
+            builder.RegisterEntryPoint<NorthernLandsCampaignRuntime>(Lifetime.Singleton);
 
             // These message channels are essential and persist for the lifetime of the Session and relay services
             // Registering as instance to prevent code stripping on iOS

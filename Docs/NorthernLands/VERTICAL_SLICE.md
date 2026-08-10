@@ -1,4 +1,4 @@
-# Riverholm vertical slice
+# Riverholm campaign slice
 
 The development branch now generates its first campaign scene before export instead of launching the old Boss Room arena.
 
@@ -16,15 +16,21 @@ The development branch now generates its first campaign scene before export inst
 - Local enemy pursuit, melee attacks, hero/enemy health, hit reactions, death and hero respawn.
 - Light/heavy area attacks and collectible northern-silver drops.
 - HUD readouts for health and collected silver.
+- Jarl Ingvar as an in-world quest giver with a contextual mobile interaction button.
+- A complete first objective: accept the hunt, defeat four frost imps, return for gold and experience, then unlock the eastern portal.
+- Persistent northern silver, health, quest progress and Riverholm position with ten-second autosave and pause/quit saving.
+- A second explorable 360 × 360 metre scene, the Shore of the Forgotten in the Dead World, with a soul river, ruined shrines, bone fields, enemies and a sealed road to the Tower of Gods.
+- A third playable scene, the Tower of Gods trial hall, with divine pillars, aether crystals, eight guardians and a Gate of Life unlocked by completing the trial.
+- Real world travel from Riverholm to the Dead World, onward to the Tower of Gods and back to Riverholm, plus the living-world/dead-world death loop.
 
 ## Build discipline
 
-The Cloud Build hook rebuilds `Assets/Scenes/NorthernLands.unity`, appends it to Build Settings and then validates that `Startup` and `MainMenu` remain the first route. No cloud build should be launched until the first quest, portal gate and a full save/load pass are connected.
+The Cloud Build hook rebuilds `Assets/Scenes/NorthernLands.unity`, `Assets/Scenes/DeadWorld.unity` and `Assets/Scenes/TowerOfGods.unity`, appends all three to Build Settings and then validates that `Startup` and `MainMenu` remain the first route. Cloud Build stays disabled until the branch has passed a compile/build validation, so free minutes are not spent on known-broken revisions.
 
 ## Next implementation block
 
-1. Connect northern-silver pickups to the persistent inventory and first Riverholm quest.
-2. Add a jarl NPC, quest dialogue and an objective marker.
-3. Activate the Dead World portal only after the first quest gate.
-4. Persist the hero's position, health and cleared objective state.
-5. Run one compile/build validation, fix all errors, then spend a single cloud-build slot.
+1. Compile and build-validate both generated scenes without launching paid/free cloud minutes.
+2. Add the first dungeon and boss encounter after the Tower of Gods trial.
+3. Replace placeholder environment primitives with optimized modular art while retaining the generated layout and gameplay markers.
+4. Add objective markers, inventory presentation and race-specific starting abilities.
+5. Spend one cloud-build slot only after validation is clean.

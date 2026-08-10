@@ -16,17 +16,23 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.GameState
     [Serializable]
     public class NorthernLandsSaveData
     {
-        public int schemaVersion = 1;
+        public int schemaVersion = 2;
         public NorthernWorldId currentWorld = NorthernWorldId.NorthernLands;
         public int level = 1;
         public int experience;
         public int pendingTalentChoices;
         public int gold;
+        public int northernSilver;
+        public bool hasWorldPosition;
+        public float positionX;
+        public float positionY;
+        public float positionZ;
         public int deadWorldDeaths;
         public int soulKills;
         public int soulAsh;
         public bool towerUnlocked;
         public bool towerCompleted;
+        public int towerTrialKills;
         public NorthernLandsHeroStats heroStats = new();
         public string[] learnedTalentIds = Array.Empty<string>();
         public string[] inventoryItemIds = Array.Empty<string>();
@@ -78,6 +84,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.GameState
             Run.quests ??= Array.Empty<QuestProgressData>();
             Run.cityReputations ??= Array.Empty<CityReputationData>();
             Run.heroStats ??= new NorthernLandsHeroStats();
+            Run.schemaVersion = 2;
         }
 
         public void RecordSoulKill(bool droppedAsh)
@@ -127,6 +134,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.GameState
         public void CompleteTowerTrial()
         {
             Run.towerCompleted = true;
+            Run.towerTrialKills = 8;
             Run.deadWorldDeaths = 0;
             Run.soulKills = 0;
             Run.soulAsh = 0;

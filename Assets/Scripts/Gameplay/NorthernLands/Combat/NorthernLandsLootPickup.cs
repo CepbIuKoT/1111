@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.BossRoom.Gameplay.NorthernLands.Campaign;
 
 namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
 {
@@ -7,10 +8,8 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
     /// </summary>
     public sealed class NorthernLandsLootPickup : MonoBehaviour
     {
-        const string k_SilverKey = "northern-lands-silver";
         Transform m_Player;
-
-        public static int Silver => PlayerPrefs.GetInt(k_SilverKey, 0);
+        NorthernLandsCampaignDirector m_Director;
 
         public static void Create(Vector3 position)
         {
@@ -30,6 +29,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
             transform.position += Vector3.up * Mathf.Sin(Time.time * 3f) * 0.0018f;
             if (!m_Player)
             {
+                m_Director = m_Director ? m_Director : FindFirstObjectByType<NorthernLandsCampaignDirector>();
                 var combatants = FindObjectsByType<NorthernLandsCombatant>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
                 foreach (var combatant in combatants)
                 {
@@ -43,8 +43,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Combat
 
             if (m_Player && Vector3.SqrMagnitude(m_Player.position - transform.position) < 3.2f)
             {
-                PlayerPrefs.SetInt(k_SilverKey, Silver + 1);
-                PlayerPrefs.Save();
+                m_Director?.CollectNorthernSilver(1);
                 Destroy(gameObject);
             }
         }

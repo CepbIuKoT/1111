@@ -1,5 +1,6 @@
 using TMPro;
 using Unity.BossRoom.Gameplay.NorthernLands.Combat;
+using Unity.BossRoom.Gameplay.NorthernLands.Campaign;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -16,13 +17,20 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
 
         NorthernLandsPlayerInput m_Input;
         NorthernLandsCombatant m_Player;
+        NorthernLandsCampaignDirector m_Director;
         TMP_FontAsset m_Font;
         TMP_Text m_HealthLabel;
         TMP_Text m_SilverLabel;
+        TMP_Text m_ObjectiveLabel;
+        TMP_Text m_StatusLabel;
+        TMP_Text m_InteractionLabel;
+        TMP_Text m_LocationLabel;
+        GameObject m_InteractionButton;
 
         void Start()
         {
             m_Input = FindFirstObjectByType<NorthernLandsPlayerInput>();
+            m_Director = GetComponent<NorthernLandsCampaignDirector>();
             if (!m_Input || (!Application.isMobilePlatform && !Application.isEditor))
             {
                 return;
@@ -31,6 +39,19 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             var sourceFont = Resources.Load<Font>("NorthernLands/Fonts/LiberationSans");
             m_Font = sourceFont ? TMP_FontAsset.CreateFontAsset(sourceFont) : TMP_Settings.defaultFontAsset;
             BuildCanvas();
+            if (m_Director)
+            {
+                m_Director.UiChanged += RefreshCampaignUi;
+                RefreshCampaignUi();
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (m_Director)
+            {
+                m_Director.UiChanged -= RefreshCampaignUi;
+            }
         }
 
         void Update()
@@ -57,7 +78,22 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             {
                 m_HealthLabel.text = $"ЗДОРОВЬЕ  {Mathf.CeilToInt(m_Player.Health)} / {Mathf.CeilToInt(m_Player.MaxHealth)}";
             }
-            m_SilverLabel.text = $"СЕВЕРНОЕ СЕРЕБРО  {NorthernLandsLootPickup.Silver}";
+            var silver = m_Director ? m_Director.NorthernSilver : 0;
+            var silverText = $"СЕВЕРНОЕ СЕРЕБРО  {silver}";
+            if (m_SilverLabel.text != silverText)
+            {
+                m_SilverLabel.text = silverText;
+            }
+
+            if (m_Director)
+            {
+                var interaction = m_Director.InteractionText;
+                m_InteractionButton.SetActive(!string.IsNullOrEmpty(interaction));
+                if (m_InteractionLabel.text != interaction)
+                {
+                    m_InteractionLabel.text = interaction;
+                }
+            }
         }
 
         void BuildCanvas()
@@ -96,15 +132,23 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             locationRect.pivot = new Vector2(0.5f, 1f);
             locationRect.sizeDelta = new Vector2(700f, 90f);
             locationRect.anchoredPosition = new Vector2(0f, -35f);
-            var locationText = location.GetComponent<TextMeshProUGUI>();
-            locationText.font = m_Font;
-            locationText.text = "СЕВЕРНЫЕ ЗЕМЛИ  •  РИВЕРХОЛЬМ";
-            locationText.fontSize = 28f;
-            locationText.color = new Color(0.92f, 0.94f, 0.98f, 0.92f);
-            locationText.alignment = TextAlignmentOptions.Center;
+            m_LocationLabel = location.GetComponent<TextMeshProUGUI>();
+            m_LocationLabel.font = m_Font;
+            m_LocationLabel.text = "СЕВЕРНЫЕ ЗЕМЛИ  •  РИВЕРХОЛЬМ";
+            m_LocationLabel.fontSize = 28f;
+            m_LocationLabel.color = new Color(0.92f, 0.94f, 0.98f, 0.92f);
+            m_LocationLabel.alignment = TextAlignmentOptions.Center;
 
             m_HealthLabel = CreateHudLabel(canvasObject.transform, "Health", new Vector2(45f, -38f), new Vector2(500f, 55f));
             m_SilverLabel = CreateHudLabel(canvasObject.transform, "Silver", new Vector2(45f, -92f), new Vector2(500f, 48f));
+            m_ObjectiveLabel = CreateHudLabel(canvasObject.transform, "Objective", new Vector2(45f, -145f), new Vector2(760f, 60f));
+            m_ObjectiveLabel.fontSize = 23f;
+            m_ObjectiveLabel.color = new Color(0.96f, 0.82f, 0.42f);
+
+            m_StatusLabel = CreateCenteredLabel(canvasObject.transform, "Status", new Vector2(0f, -105f), new Vector2(980f, 105f), 23f);
+            m_InteractionButton = CreateCenteredInteractionButton(canvasObject.transform);
+            m_InteractionLabel = m_InteractionButton.GetComponentInChildren<TextMeshProUGUI>();
+            m_InteractionButton.SetActive(false);
         }
 
         void CreateActionButton(Transform parent, string caption, Vector2 position, float size, Color color, UnityEngine.Events.UnityAction action)
@@ -164,6 +208,55 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Player
             label.alignment = TextAlignmentOptions.Left;
             label.raycastTarget = false;
             return label;
+        }
+
+        TMP_Text CreateCenteredLabel(Transform parent, string name, Vector2 position, Vector2 size, float fontSize)
+        {
+            var labelObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelObject.transform.SetParent(parent, false);
+            var rect = labelObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var label = labelObject.GetComponent<TextMeshProUGUI>();
+            label.font = m_Font;
+            label.fontSize = fontSize;
+            label.color = new Color(0.94f, 0.95f, 0.98f);
+            label.alignment = TextAlignmentOptions.Center;
+            label.enableWordWrapping = true;
+            label.raycastTarget = false;
+            return label;
+        }
+
+        GameObject CreateCenteredInteractionButton(Transform parent)
+        {
+            var item = new GameObject("Interaction", typeof(RectTransform), typeof(Image), typeof(Button));
+            item.transform.SetParent(parent, false);
+            var rect = item.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 40f);
+            rect.sizeDelta = new Vector2(340f, 82f);
+            var image = item.GetComponent<Image>();
+            image.color = new Color(0.12f, 0.18f, 0.26f, 0.94f);
+            var button = item.GetComponent<Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => m_Director?.TryInteract());
+            AddLabel(item.transform, "ДЕЙСТВИЕ", 27f);
+            return item;
+        }
+
+        void RefreshCampaignUi()
+        {
+            if (!m_Director || !m_ObjectiveLabel || !m_StatusLabel)
+            {
+                return;
+            }
+
+            m_ObjectiveLabel.text = m_Director.ObjectiveText;
+            m_StatusLabel.text = m_Director.StatusText;
+            m_LocationLabel.text = m_Director.LocationText;
         }
     }
 

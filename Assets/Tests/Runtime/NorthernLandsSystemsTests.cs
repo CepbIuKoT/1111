@@ -69,5 +69,33 @@ namespace Unity.BossRoom.Tests.Runtime
             Assert.That(reputation.TryClearNameWithGold(NorthernWorldId.NorthernLands, 25), Is.True);
             Assert.That(state.Run.gold, Is.EqualTo(25));
         }
+
+        [Test]
+        public void DeadWorldObjectiveUnlocksTowerAfterFiveSoulsAndTwoAsh()
+        {
+            var state = new NorthernLandsProgressState();
+
+            for (var i = 0; i < 5; i++)
+            {
+                state.RecordSoulKill(i == 1 || i == 3);
+            }
+
+            Assert.That(state.Run.soulKills, Is.EqualTo(5));
+            Assert.That(state.Run.soulAsh, Is.EqualTo(2));
+            Assert.That(state.CanEnter(NorthernWorldId.TowerOfGods), Is.True);
+        }
+
+        [Test]
+        public void SecondDeadWorldDeathResetsRunButKeepsPermanentRace()
+        {
+            var state = new NorthernLandsProgressState();
+            state.EternalRace.raceId = "northborn";
+            state.Run.gold = 200;
+
+            Assert.That(state.HandleDeadWorldDeath(), Is.False);
+            Assert.That(state.HandleDeadWorldDeath(), Is.True);
+            Assert.That(state.Run.gold, Is.Zero);
+            Assert.That(state.EternalRace.raceId, Is.EqualTo("northborn"));
+        }
     }
 }

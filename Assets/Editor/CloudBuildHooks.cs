@@ -20,8 +20,8 @@ namespace NorthernLands.Editor
             ValidateStartupScenes();
 
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.northernlands.game");
-            PlayerSettings.bundleVersion = "0.5.0";
-            PlayerSettings.Android.bundleVersionCode = 5;
+            PlayerSettings.bundleVersion = "0.6.0";
+            PlayerSettings.Android.bundleVersionCode = 6;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
 
             AssetDatabase.SaveAssets();
@@ -49,6 +49,16 @@ namespace NorthernLands.Editor
             if (!enabledScenes.Contains(NorthernLandsRiverholmSceneBuilder.ScenePath, StringComparer.Ordinal))
             {
                 throw new BuildFailedException("Northern Lands build must include the generated Riverholm scene.");
+            }
+
+            if (!enabledScenes.Contains(NorthernLandsRiverholmSceneBuilder.DeadWorldScenePath, StringComparer.Ordinal))
+            {
+                throw new BuildFailedException("Northern Lands build must include the generated Dead World scene.");
+            }
+
+            if (!enabledScenes.Contains(NorthernLandsRiverholmSceneBuilder.TowerScenePath, StringComparer.Ordinal))
+            {
+                throw new BuildFailedException("Northern Lands build must include the generated Tower of Gods scene.");
             }
         }
     }

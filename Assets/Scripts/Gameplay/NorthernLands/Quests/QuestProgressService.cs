@@ -17,7 +17,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Quests
 
         public QuestProgressData Start(string questId, int requiredAmount)
         {
-            var existing = Find(questId);
+            var existing = Get(questId);
             if (existing != null)
             {
                 return existing;
@@ -37,7 +37,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Quests
 
         public bool AddProgress(string questId, int amount)
         {
-            var quest = Find(questId);
+            var quest = Get(questId);
             if (quest == null || quest.completed)
             {
                 return false;
@@ -50,7 +50,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Quests
 
         public bool TryClaimReward(string questId, int goldReward, int experienceReward, HeroProgressionService progression)
         {
-            var quest = Find(questId);
+            var quest = Get(questId);
             if (quest == null || !quest.completed || quest.rewardClaimed)
             {
                 return false;
@@ -62,7 +62,7 @@ namespace Unity.BossRoom.Gameplay.NorthernLands.Quests
             return true;
         }
 
-        QuestProgressData Find(string questId)
+        public QuestProgressData Get(string questId)
         {
             var quests = m_Progress.Run.quests;
             for (var i = 0; i < quests.Length; i++)
