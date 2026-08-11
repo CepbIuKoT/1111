@@ -29,6 +29,10 @@ The development branch now generates its first campaign scene before export inst
 
 The Cloud Build hook rebuilds `Assets/Scenes/NorthernLands.unity`, `Assets/Scenes/DeadWorld.unity` and `Assets/Scenes/TowerOfGods.unity`, appends all three to Build Settings and then validates that `Startup` and `MainMenu` remain the first route. Cloud Build stays disabled until the branch has passed a compile/build validation, so free minutes are not spent on known-broken revisions.
 
+When the project is opened in a local Unity Editor for the first time, `NorthernLandsLocalBootstrap` creates the three generated campaign scenes automatically and opens `Startup`. It never runs in batch mode, skips generation when the active scene has unsaved changes, and can be started manually through `Northern Lands > Prepare Local Playable Project`.
+
+Local Codex control is provided by the single pinned `MCP for Unity 9.7.1` package. Its project-scoped endpoint is restricted to `127.0.0.1`, so scene inspection, Console reads, tests and Play Mode automation can be performed without exposing the Editor bridge to the network.
+
 ## Next implementation block
 
 1. Compile and build-validate both generated scenes without launching paid/free cloud minutes.
